@@ -1,0 +1,41 @@
+name: Upload Docker Images for Scanning
+
+on:
+  # Manually trigger on specific branches
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+
+jobs:
+  upload-Docker-images:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-west-2
+        role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+     
+    - name: Setup .NET Core 6.0
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 6.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --no-restore
+
+    - name: Run Docker Image Uploader
+      run: |
+        cd ./src/AWS.Deploy.DockerImageUploader
+        dotnet run --project ./AWS.Deploy.DockerImageUploader.csproj
